@@ -1,0 +1,46 @@
+.gf_image_select_has_src .gf_image_select_button {
+    display: none;
+}
+
+.gf_image_select_crop {
+    display: block;
+    max-width: 100%;
+}
+
+.gf_image_select_has_src .gf_image_select_crop {
+    width: auto;
+}
+
+.gf_image_select_preview > canvas {
+    display: block;
+    max-height: 100vh;
+    max-width: 100%;
+}
+
+.gf_image_select_button_crop {
+    display: none;
+}
+
+.gf_image_select_has_src .gf_image_select_button_crop {
+    display: inline;
+}
+
+.gf_image_select_has_crop .gf_image_select_button_crop {
+    display: none;
+}
+
+.gf_image_select_button_back {
+    display: none;
+}
+
+.gf_image_select_has_crop .gf_image_select_button_back {
+    display: inline;
+}
+
+.gf_image_select_has_crop .gf_image_select_crop_wrapper {
+    display: none;
+}
+
+.gf_image_select_buttons {
+    margin-top: 10px;
+}
