@@ -2,7 +2,7 @@
 /*
 Plugin Name: Image Select for Gravity Forms
 Plugin URI: https://ionata.com.au
-Description: An custom add-on for Gravity Forms
+Description: An custom field for Gravity Forms
 Version: 0.1.0
 Author: Evo Stamatov
 Author URI: https://ionata.com.au
@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 define( 'GF_IMAGE_SELECT_VERSION', '0.1.0' );
-define( 'GF_IMAGE_SELECT_ADDON_PATH', basename( dirname( __FILE__ ) ) . DIRECTORY_SEPARATOR . basename( __FILE__ ) );
 define( 'GF_IMAGE_SELECT_DOMAIN', 'gfimageselectdomain' );
 
 add_action( 'gform_loaded', array( 'GFImageSelect_Bootstrap', 'load' ), 5 );
@@ -35,21 +34,13 @@ class GFImageSelect_Bootstrap {
 
     public static function load() {
 
-        if ( ! method_exists( 'GFForms', 'include_addon_framework' ) ) {
+        if ( ! class_exists( 'GFForms' ) ) {
             return;
         }
-
-        require_once( 'class-image-select-addon.php' );
-
-        GFAddOn::register( 'GFImageSelectAddOn' );
 
         require_once( 'class-image-select-field.php' );
 
         GF_Fields::register( new GFImageSelectField() );
     }
 
-}
-
-function gf_image_select_addon() {
-    return GFImageSelectAddOn::get_instance();
 }
