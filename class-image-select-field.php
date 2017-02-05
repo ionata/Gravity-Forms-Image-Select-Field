@@ -1,6 +1,6 @@
 <?php
 
-class GF_Field_Image_Select extends GF_Field {
+class GFImageSelectField extends GF_Field {
     public $type = 'image_select';
     const PREFIX = 'data:application/json;base64,';
 

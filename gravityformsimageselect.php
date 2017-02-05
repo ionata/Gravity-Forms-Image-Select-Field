@@ -45,7 +45,7 @@ class GFImageSelect_Bootstrap {
 
         require_once( 'class-image-select-field.php' );
 
-        GF_Fields::register( new GF_Field_Image_Select() );
+        GF_Fields::register( new GFImageSelectField() );
     }
 
 }
