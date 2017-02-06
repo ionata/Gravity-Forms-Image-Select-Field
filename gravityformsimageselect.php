@@ -2,7 +2,7 @@
 /*
 Plugin Name: Image Select for Gravity Forms
 Plugin URI: https://ionata.com.au
-Description: An custom field for Gravity Forms
+Description: A custom field for Gravity Forms
 Version: 0.1.0
 Author: Evo Stamatov
 Author URI: https://ionata.com.au
