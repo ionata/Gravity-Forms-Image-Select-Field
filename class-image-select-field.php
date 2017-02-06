@@ -1,8 +1,74 @@
 <?php
 
 class GFImageSelectField extends GF_Field {
+    /**
+     * Sets the field type.
+     *
+     * @var string The type of field.
+     */
     public $type = 'image_select';
-    const PREFIX = 'data:application/json;base64,';
+
+    public function __construct( $data = array() ) {
+        parent::__construct( $data );
+
+        // TODO(evo): work out if the only way to manage inputs is this action ???
+        add_action( 'gform_editor_js_set_default_values', array( &$this, 'set_default_values' ) );
+        // $this->set_inputs();
+    }
+
+    //*
+    function set_default_values() { ?>
+
+        case 'image_select' :
+            if (!field.label) {
+                field.label = <?php echo json_encode( esc_html__( 'Image Select', GF_IMAGE_SELECT_DOMAIN ) ); ?>;
+            }
+
+            var attachmentId = new Input(field.id + '.1', <?php echo json_encode( gf_apply_filters( array( 'gf_image_select_attachment_id', rgget( 'id' ) ), esc_html__( 'ID', GF_IMAGE_SELECT_DOMAIN ), rgget( 'id' ) ) ) ?>);
+            var attachmentSrc = new Input(field.id + '.2', <?php echo json_encode( gf_apply_filters( array( 'gf_image_select_attachment_id', rgget( 'id' ) ), esc_html__( 'Source', GF_IMAGE_SELECT_DOMAIN ) ) ) ?>);
+            var width = new Input(field.id + '.3', <?php echo json_encode( gf_apply_filters( array( 'gf_image_select_attachment_id', rgget( 'id' ) ), esc_html__( 'Width', GF_IMAGE_SELECT_DOMAIN ) ) ) ?>);
+            var height = new Input(field.id + '.4', <?php echo json_encode( gf_apply_filters( array( 'gf_image_select_attachment_id', rgget( 'id' ) ), esc_html__( 'Height', GF_IMAGE_SELECT_DOMAIN ) ) ) ?>);
+            var crop = new Input(field.id + '.5', <?php echo json_encode( gf_apply_filters( array( 'gf_image_select_attachment_id', rgget( 'id' ) ), esc_html__( 'Crop', GF_IMAGE_SELECT_DOMAIN ) ) ) ?>);
+
+            field.inputs = [attachmentId, attachmentSrc, width, height, crop];
+            break;
+
+      <?php
+
+    }
+    /**/
+
+    /*
+    private function set_inputs() {
+
+        if ( $this->id ) {
+            $inputs = array(
+                array(
+                    'id' => $this->id . '.1',
+                    'label' => __( 'ID', GF_IMAGE_SELECT_DOMAIN )
+                ),
+                array(
+                    'id' => $this->id . '.2',
+                    'label' => __( 'Source', GF_IMAGE_SELECT_DOMAIN )
+                ),
+                array(
+                    'id' => $this->id . '.3',
+                    'label' => __( 'Width', GF_IMAGE_SELECT_DOMAIN )
+                ),
+                array(
+                    'id' => $this->id . '.4',
+                    'label' => __( 'Height', GF_IMAGE_SELECT_DOMAIN )
+                ),
+                array(
+                    'id' => $this->id . '.5',
+                    'label' => __( 'Crop', GF_IMAGE_SELECT_DOMAIN )
+                ),
+            );
+            $this->inputs = $inputs;
+        }
+
+    }
+    /**/
 
     /**
      * Return the field title, for use in the form editor.
@@ -24,7 +90,7 @@ class GFImageSelectField extends GF_Field {
 
         return array(
             'group' => 'advanced_fields',
-            'text'  => $this->get_form_editor_field_title()
+            'text'  => $this->get_form_editor_field_title(),
         );
 
     }
@@ -38,14 +104,14 @@ class GFImageSelectField extends GF_Field {
 
         return array(
             'css_class_setting',
-            'default_value_setting',
             'description_setting',
-            'file_extensions_setting',
+            // 'file_extensions_setting',
             'label_placement_setting',
             'label_setting',
             'prepopulate_field_setting',
-            'size_setting',
+            // 'size_setting',
 
+            // 'default_value_setting',
             // 'conditional_logic_field_setting',
             // 'error_message_setting',
             // 'admin_label_setting',
@@ -60,9 +126,22 @@ class GFImageSelectField extends GF_Field {
 
     }
 
+    /**
+     * Outputs any inline scripts to be used when the page is rendered.
+     *
+     * @param array $form The Form Object.
+     * @return string The inline scripts.
+     */
     public function get_form_inline_script_on_page_render( $form ) {
 
+        $is_entry_detail = $this->is_entry_detail();
+        $is_form_editor  = $this->is_form_editor();
+        $is_admin        = $is_entry_detail || $is_form_editor;
+
+        $form_id = absint( $form['id'] );
         $id = absint( $this->id );
+
+        $field_id = $is_admin || $form_id == 0 ? "$id" : "{$form_id}_$id";
 
         add_filter( 'media_view_strings', array( &$this, 'custom_media_uploader' ) );
         wp_enqueue_media();
@@ -75,10 +154,10 @@ class GFImageSelectField extends GF_Field {
 
         $ver = GF_IMAGE_SELECT_VERSION;
         // $ver = rand( 10000, 20000 );
-        wp_enqueue_script( 'gf_image_select', plugins_url( 'image-select.js', __FILE__ ), $deps = array( 'jquery', 'cropperjs' ), $ver, $in_footer = true);
+        wp_enqueue_script( 'gf_image_select', plugins_url( 'image-select.js', __FILE__ ), $deps = array( 'jquery', 'cropperjs' ), $ver, $in_footer = true );
         wp_enqueue_style( 'gf_image_select', plugins_url( 'image-select.css', __FILE__ ), $deps = array(), $ver );
 
-        return ";new GFImageSelect({ key: $id });";
+        return ";new GFImageSelect({ key: '$field_id' });";
 
     }
 
@@ -92,12 +171,15 @@ class GFImageSelectField extends GF_Field {
      */
     public function get_field_input( $form, $value = '', $entry = null ) {
 
-        $form_id = absint( $form['id'] );
-        $id      = absint( $this->id );
-
         $is_entry_detail = $this->is_entry_detail();
         $is_form_editor  = $this->is_form_editor();
         $is_admin        = $is_entry_detail || $is_form_editor;
+
+        $form_id = absint( $form['id'] );
+        $id      = absint( $this->id );
+
+        $field_id = $is_admin || $form_id == 0 ? "$id" : "{$form_id}_$id";
+        $form_id  = $is_admin && empty( $form_id ) ? rgget( 'id' ) : $form_id;
 
         $size         = $this->size;
         $class_suffix = $is_entry_detail ? '_admin' : '';
@@ -107,49 +189,72 @@ class GFImageSelectField extends GF_Field {
 
         $extensions_message = '';
 
-        $allowed_extensions = ! empty( $this->allowedExtensions ) ? join( ',', GFCommon::clean_extensions( explode( ',', strtolower( $this->allowedExtensions ) ) ) ) : array();
-        if ( ! empty( $allowed_extensions ) ) {
-            $extensions_message = esc_attr( sprintf( __( 'Accepted file types: %s.', 'gravityforms' ), str_replace( ',', ', ', $allowed_extensions ) ) );
+        // $allowed_extensions = ! empty( $this->allowedExtensions ) ? join( ',', GFCommon::clean_extensions( explode( ',', strtolower( $this->allowedExtensions ) ) ) ) : array();
+        // if ( ! empty( $allowed_extensions ) ) {
+        //     $extensions_message = esc_attr( sprintf( __( 'Accepted file types: %s.', 'gravityforms' ), str_replace( ',', ', ', $allowed_extensions ) ) );
+        // }
+
+        $attachment_id = '';
+        $attachment_src = '';
+        $width = '100';
+        $height = '100';
+        $crop = '';
+
+        if ( is_array( $value ) ) {
+            $attachment_id = esc_attr( GFForms::get( $this->id . '.1', $value ) );
+            $attachment_src = esc_attr( GFForms::get( $this->id . '.2', $value ) );
+            $width = esc_attr( GFForms::get( $this->id . '.3', $value ) );
+            $height = esc_attr( GFForms::get( $this->id . '.4', $value ) );
+            $crop = esc_attr( GFForms::get( $this->id . '.5', $value ) );
         }
 
         if ( $is_entry_detail ) {
-            $input = "<input type='hidden' id='input_{$id}' name='input_{$id}' value='{$value}' />";
+            $input = '';
+            $input .= "<input type='hidden' name='input_{$id}.1' value='{$attachment_id}' />";
+            $input .= "<input type='hidden' name='input_{$id}.2' value='{$attachment_src}' />";
+            $input .= "<input type='hidden' name='input_{$id}.3' value='{$width}' />";
+            $input .= "<input type='hidden' name='input_{$id}.4' value='{$height}' />";
+            $input .= "<input type='hidden' name='input_{$id}.5' value='{$crop}' />";
 
             return $input . '<br/>' . esc_html__( 'Image selecton is not editable', GF_IMAGE_SELECT_DOMAIN );
         }
 
-        $src = '';
-        $width = '100';
-        $height = '100';
-        $has_src = '';
-        if ( ! empty( $value ) ) {
-            if ( $this->is_decodable( $value ) ) {
-                $data = $this->decode( $value );
-                $attachment_id = $data->attachmentId;
-            } else {
-                $attachment_id = $value;
-            }
+        if ( $attachment_id ) {
+            $image = wp_get_attachment_image_src( $attachment_id, 'large' );
 
-            if ( $attachment_id ) {
-                $image = wp_get_attachment_image_src( $attachment_id, 'large' );
-                if ( $image ) {
-                    $src = $image[0];
-                    $width = $image[1];
-                    $height = $image[2];
-                    $has_src = 'gf_image_select_has_src';
-                }
+            if ( $image ) {
+                $attachment_src = $image[0];
+                $width = $image[1];
+                $height = $image[2];
+            } else {
+                $attachment_id = '';
+                $attachment_src = '';
+                $width = '100';
+                $height = '100';
             }
+        } else if ( ! $attachment_src ) {
+            $width = '100';
+            $height = '100';
         }
+
+        $has_src = '';
+        if ( $attachment_src ) {
+            $has_src = 'gf_image_select_has_src';
+        }
+
+        // $required_attribute = $this->isRequired ? 'aria-required="true"' : '';
+        // $invalid_attribute = $this->failed_validation ? 'aria-invalid="true"' : 'aria-invalid="false"';
 
         // $logic_event = $this->get_conditional_logic_event( 'change' );
 
         // $tabindex1 = $this->get_tabindex();
         // $tabindex2 = $this->get_tabindex();
 
+        $no_display_admin = $is_admin ? "style='display:none'" : '';
+
         $non_admin_html = '';
         if ( ! $is_admin ) {
             $non_admin_html .= "<span id='extensions_message' class='screen-reader-text'>{$extensions_message}</span>"; // NOTE(evo): screen reader only
-            $non_admin_html .= "<div class='validation_message'></div>";
         }
 
         $string_button = esc_attr__( 'Select image', GF_IMAGE_SELECT_DOMAIN );
@@ -159,32 +264,43 @@ class GFImageSelectField extends GF_Field {
         $string_crop = esc_attr__( 'Preview', GF_IMAGE_SELECT_DOMAIN );
         $string_back = esc_attr__( 'Back', GF_IMAGE_SELECT_DOMAIN );
 
+        // gfield_trigger_change
         $input = <<<TEMPLATE
-<div class='ginput_container ginput_container_image_select $class $has_src' id='gf_image_select_container_$id'>
-    <input type='hidden' name='input_$id' id='gf_image_select_$id' value='$value' />
+<div class='ginput_complex$class_suffix ginput_container ginput_container_image_select $class $has_src' id='gf_image_select_container_{$field_id}'>
+    $non_admin_html
+
+    <input type='hidden' name='input_{$id}.1' id='gf_image_select_{$field_id}_1' value='$attachment_id' />
+    <input type='hidden' name='input_{$id}.2' id='gf_image_select_{$field_id}_2' value='$attachment_src' />
+    <input type='hidden' name='input_{$id}.3' id='gf_image_select_{$field_id}_3' value='$width' />
+    <input type='hidden' name='input_{$id}.4' id='gf_image_select_{$field_id}_4' value='$height' />
+    <input type='hidden' name='input_{$id}.5' id='gf_image_select_{$field_id}_5' value='$crop' />
 
     <div class='gf_image_select_crop_wrapper'>
-        <img id='gf_image_select_crop_$id' src='$src' width='$width' height='$height' class='gf_image_select_crop' />
+        <img id='gf_image_select_crop_{$field_id}' src='$attachment_src' width='$width' height='$height' class='gf_image_select_crop' />
     </div>
 
-    <div id='gf_image_select_preview_$id' class='gf_image_select_preview'></div>
+    <div id='gf_image_select_preview_{$field_id}' class='gf_image_select_preview'></div>
 
     <div class='gf_image_select_buttons'>
         <button
             type='button'
-            id='gf_image_select_button_crop_$id'
+            id='gf_image_select_button_crop_{$field_id}'
             class='button gf_image_select_button gf_image_select_button_crop'
+            $disabled_text
+            $no_display_admin
         >$string_crop</button>
 
         <button
             type='button'
-            id='gf_image_select_button_back_$id'
+            id='gf_image_select_button_back_{$field_id}'
             class='button gf_image_select_button gf_image_select_button_back'
+            $disabled_text
+            $no_display_admin
         >$string_back</button>
 
         <button
             type='button'
-            id='gf_image_select_button_$id'
+            id='gf_image_select_button_{$field_id}'
             class='button gf_image_select_button gf_image_select_button_select'
             data-choose='$string_choose'
             data-update='$string_update'
@@ -192,7 +308,7 @@ class GFImageSelectField extends GF_Field {
         >$string_button</button>
     </div>
 
-    $non_admin_html
+    <div class='gf_clear gf_clear_complex'></div>
 </div>
 TEMPLATE;
 
@@ -214,92 +330,108 @@ TEMPLATE;
 
         $message = '';
 
-        if ( $this->is_decodable( $value ) ) {
-            $data = $this->decode_value( $value );
+        if ( is_array( $value ) ) {
+            $attachment_id  = trim( rgget( $this->id . '.1', $value ) );
+            $attachment_src = trim( rgget( $this->id . '.2', $value ) );
+            $width          = trim( rgget( $this->id . '.3', $value ) );
+            $height         = trim( rgget( $this->id . '.4', $value ) );
+            $crop           = trim( rgget( $this->id . '.5', $value ) );
 
-            $attachment_id = isset( $data->attachmentId ) ? $data->attachmentId : null;
             if ( $attachment_id ) {
                 $image = wp_get_attachment_image_src( $attachment_id, 'large' );
-                if ( ! $image ) {
+
+                if ( ! $image || ! $attachment_src ) {
                     $message = __( 'Invalid attachment', GF_IMAGE_SELECT_DOMAIN );
+                } else if ( $attachment_src !== $image[0] ) {
+                    $message = __( 'Invalid source', GF_IMAGE_SELECT_DOMAIN );
+                } else if ( ! $crop ) {
+                    $message = __( 'Missing crop region', GF_IMAGE_SELECT_DOMAIN );
+                } else {
+                    $_crop = json_decode( $crop );
+                    if ( ! isset( $_crop[0] ) || ! isset( $_crop[1] ) || ! isset( $_crop[2] ) || ! isset( $_crop[3] ) ) {
+                        $message = __( 'Ivalid crop region', GF_IMAGE_SELECT_DOMAIN );
+                    }
                 }
             } else {
                 $message = __( 'Missing attachment', GF_IMAGE_SELECT_DOMAIN );
-            }
-
-            $crop = isset( $data->crop ) ? $data->crop : null;
-            if ( $crop ) {
-                if ( ! isset( $crop->x ) || ! isset( $crop->y ) || ! isset( $crop->width ) || ! isset( $crop->height ) ) {
-                    $message = __( 'Ivalid crop region', GF_IMAGE_SELECT_DOMAIN );
-                }
-            } else {
-                $message = __( 'Missing crop region', GF_IMAGE_SELECT_DOMAIN );
-            }
-        } else {
-            $attachment_id = $value;
-
-            $image = wp_get_attachment_image_src( $attachment_id, 'large' );
-            if ( $image ) {
-                $message = __( 'Missing crop region', GF_IMAGE_SELECT_DOMAIN );
             }
         }
 
         if ( ! empty( $message ) ) {
             $this->failed_validation = true;
-            $this->validation_message = $message;
+            $this->validation_message = empty( $this->errorMessage ) ? $message : $this->errorMessage;
         }
 
     }
 
     /**
-     * Return the formatted entry value.
+     * Gets the field value to be displayed on the entry detail page.
      *
-     * @param array $entry The entry currently being processed.
-     * @param string $input_id The field or input ID.
-     * @param bool|false $use_text
-     * @param bool|false $is_csv
-     * @return string
+     * @param array|string $value    The value of the field input.
+     * @param string       $currency Not used.
+     * @param bool         $use_text Not used.
+     * @param string       $format   The format to output the value. Defaults to 'html'.
+     * @param string       $media    Not used.
+     * @return array|string The value to be displayed on the entry detail page.
      */
-    public function get_value_export( $entry, $input_id = '', $use_text = false, $is_csv = false ) {
+    public function get_value_entry_detail( $value, $currency = '', $use_text = false, $format = 'html', $media = 'screen' ) {
 
-        if ( empty( $input_id ) ) {
-            $input_id = $this->id;
-        }
+        if ( is_array( $value ) ) {
+            $attachment_id  = trim( rgget( $this->id . '.1', $value ) );
+            $attachment_src = trim( rgget( $this->id . '.2', $value ) );
+            $width          = trim( rgget( $this->id . '.3', $value ) );
+            $height         = trim( rgget( $this->id . '.4', $value ) );
+            $crop           = trim( rgget( $this->id . '.5', $value ) );
 
-        $value = rgar( $entry, $input_id );
+            $image = null;
+            $src_match_id = false;
+            $ratio = 0;
 
-        if ( ! empty( $value ) ) {
-            $form = GFAPI::get_form( $entry['form_id'] );
-            $product_info = GFCommon::get_product_fields( $form, $entry );
-
-            if ( $this->is_decodable( $value ) ) {
-                $data = $this->decode_value( $value );
-
-                $attachment_id = isset( $data->attachmentId ) ? $data->attachmentId : null;
-                $crop = isset( $data->crop ) ? $data->crop : null;
-                $width = isset( $data->width ) ? $data->width : null;
-                $height = isset( $data->height ) ? $data->height : null;
-
-                if ( $attachment_id && $crop && $width && $height) {
-                    $src = wp_get_attachment_image_src( $attachment_id, 'large' );
-
-                    if ( $src ) {
-                        $value = sprintf( '%s/%sx%s/%s,%s,%s,%s', $src[0], $width, $height, $crop->x, $crop->y, $crop->width, $crop->height);
-                    }
+            if ( $attachment_id ) {
+                $image = wp_get_attachment_image_src( $attachment_id, 'large' );
+                $src_match_id = $image && $attachment_src === $image[0];
+                if ( $width > 0 ) {
+                    $ratio = $image[1] / $width;
                 }
             }
+
+            if ( $format === 'html' ) {
+                $return = '<div style="position:relative;">';
+
+                if ( $attachment_id && $src_match_id ) {
+                    $thumb = wp_get_attachment_image( $attachment_id, 'large' );
+                    $return .= sprintf( '<a href="%s" target="_blank">%s</a>', $image[0], $thumb );
+                } else if ( $attachment_src && ! $src_match_id ) {
+                    $return .= sprintf( '<a href="%s" target="_blank">%s</a>', esc_attr( $attachment_src ), esc_html( $attachment_src ) );
+                    if ( $width && $height ) {
+                        $return .= sprintf( '<br/>Width: %s, Height: %s', esc_html( $width ), esc_html( $height ) );
+                    }
+                }
+
+                if ( $crop ) {
+                    list( $cx, $cy, $cw, $ch ) = json_decode( $crop );
+                    if ( $ratio > 0 ) {
+                        $return .= sprintf( '<div style="position:absolute;left:%0.3fpx;top:%0.3fpx;width:%0.3fpx;height:%0.3fpx;border:2px solid rgba(255,255,255,.7);box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>', $cx * $ratio, $cy * $ratio, $cw * $ratio, $ch * $ratio );
+                    }
+                    $return .= sprintf( '<br/>Crop: x: %0.3f, y: %0.3f, w: %0.3f, h: %0.3f', $cx, $cy, $cw, $ch );
+                }
+
+                $return .= sprintf( '<br/>Dimensions: %dx%d', $width, $height );
+
+                $return .= '</div>';
+            } else {
+                $return = $attachment_src;
+                if ( $crop ) {
+                    list( $cx, $cy, $cw, $ch ) = json_decode( $crop );
+                    $return .= "\n" . sprintf( '<br/>Crop: x: %0.3f, y: %0.3f, w: %0.3f, h: %0.3f', $cx, $cy, $cw, $ch );
+                }
+            }
+        } else {
+            $return = $value;
         }
 
-        return $value;
+        return $return;
 
-    }
-
-    public function is_decodable ( $value ) {
-        return substr( $value, 0, strlen( self::PREFIX ) ) === self::PREFIX;
-    }
-
-    public function decode_value ( $value ) {
-        return json_decode( rawurldecode( base64_decode( substr( $value, strlen( self::PREFIX ) ) ) ) );
     }
 
     /**

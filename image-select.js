@@ -78,35 +78,75 @@
             frame.open();
         });
 
-        if (jQuery('#gf_image_select_container_' + key).hasClass('gf_image_select_has_src')) {
-            var value = getValue(key);
-
+        var data = getData(key, jQuery);
+        if (data && data.attachmentId && data.attachmentSrc) {
             initCropper({
                 key: key,
                 jQuery: jQuery,
-                attachmentId: value.attachmentId,
-                crop: value.crop,
-                width: value.width,
-                height: value.height
+                // width: data.width,
+                // height: data.height,
+                crop: data.crop
             });
         }
     };
 
-    function getValue (key) {
-        var value = {};
-        var rawValue = jQuery('#gf_image_select_' + key).val();
+    function getData (key, jQuery) {
+        var prefix = '#gf_image_select_' + key;
 
-        if (rawValue) {
-            var prefix = 'data:application/json;base64,';
+        var attachmentId = jQuery(prefix + '_1').val() || void 0;
+        if (attachmentId) {
+            attachmentId = isNaN(attachmentId) ? 0 : parseInt(attachmentId, 10)
+        }
 
-            if (rawValue.substr(0, prefix.length) === prefix) {
-                value = JSON.parse(atou(rawValue.substr(prefix.length)));
-            } else {
-                value.attachmentId = isNaN(rawValue) ? 0 : parseInt(rawValue, 10);
+        var attachmentSrc = jQuery(prefix + '_2').val() || void 0;
+
+        var width = jQuery(prefix + '_3').val() || void 0;
+        if (width) {
+            width = isNaN(width) ? void 0 : parseInt(width, 10)
+        }
+
+        var height = jQuery(prefix + '_4').val() || void 0;
+        if (height) {
+            height = isNaN(height) ? void 0 : parseInt(height, 10)
+        }
+
+        var crop = jQuery(prefix + '_5').val() || void 0;
+        if (crop) {
+            var arr = JSON.parse(crop);
+
+            crop = {
+                x: parseFloat(arr[0]),
+                y: parseFloat(arr[1]),
+                width: parseFloat(arr[2]),
+                height: parseFloat(arr[3]),
             }
         }
 
-        return value;
+        return {
+            attachmentId: attachmentId,
+            attachmentSrc: attachmentSrc,
+            width: width,
+            height: height,
+            crop: crop
+        }
+    }
+
+    function updateData (data, key, jQuery) {
+        var prefix = '#gf_image_select_' + key;
+
+        var map = {
+            attachmentId: prefix + '_1',
+            attachmentSrc: prefix + '_2',
+            width: prefix + '_3',
+            height: prefix + '_4',
+            crop: prefix + '_5'
+        }
+
+        for (var i in data) {
+            if (map[i]) {
+                jQuery(map[i]).val(data[i]);
+            }
+        }
     }
 
     function onSelect (props) {
@@ -116,24 +156,28 @@
         var key = props.key;
         var jQuery = props.jQuery;
 
+        updateData({
+            attachmentId: attachment.id,
+            attachmentSrc: large.url,
+            // width: large.width,
+            // height: large.height
+        }, key, jQuery)
+
         jQuery('#gf_image_select_container_' + key).addClass('gf_image_select_has_src');
         jQuery('#gf_image_select_crop_' + key).attr('src', large.url);
-        jQuery('#gf_image_select_' + key).val(attachment.id);
 
         initCropper({
             key: key,
             jQuery: jQuery,
-            attachmentId: attachment.id
+            // width: large.width,
+            // height: large.height
         });
     }
 
     function initCropper (props) {
         var key = props.key;
         var jQuery = props.jQuery;
-        var attachmentId = props.attachmentId;
         var crop = props.crop;
-        var width = props.width;
-        var height = props.height;
 
         var el = jQuery('#gf_image_select_crop_' + key).get(0);
         var cropper = new Cropper(el, {
@@ -154,6 +198,11 @@
                 var imageData = cropper.getImageData();
                 width = imageData.naturalWidth;
                 height = imageData.naturalHeight;
+
+                updateData({
+                    width: width,
+                    height: height
+                }, key, jQuery)
 
                 if (crop) {
                     cropper.setData(crop);
@@ -184,16 +233,12 @@
         });
 
         function updateValue () {
-            var crop = cropper.getData();
-            var value = {
-                attachmentId: attachmentId,
-                width: width,
-                height: height,
-                crop: crop
-            };
-            console.log('value:', value);
+            var data = cropper.getData();
+            var crop = JSON.stringify([data.x, data.y, data.width, data.height]);
 
-            jQuery('#gf_image_select_' + key).val('data:application/json;base64,' + utoa(JSON.stringify(value)));
+            updateData({
+                crop: crop
+            }, key, jQuery)
         }
     }
 
