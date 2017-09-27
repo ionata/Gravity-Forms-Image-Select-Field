@@ -263,6 +263,9 @@ class GFImageSelectField extends GF_Field {
         $has_src = '';
         if ( $attachment_src ) {
             $has_src = 'gf_image_select_has_src';
+            $img_src = $attachment_src;
+        } else {
+            $img_src = '//:0';
         }
 
         // $required_attribute = $this->isRequired ? 'aria-required="true"' : '';
@@ -299,7 +302,7 @@ class GFImageSelectField extends GF_Field {
     <input type='hidden' name='input_{$id}.5' id='gf_image_select_{$field_id}_5' value='$crop' />
 
     <div class='gf_image_select_crop_wrapper'>
-        <img id='gf_image_select_crop_{$field_id}' src='$attachment_src' width='$width' height='$height' class='gf_image_select_crop' />
+        <img id='gf_image_select_crop_{$field_id}' src='$img_src' width='$width' height='$height' class='gf_image_select_crop' />
     </div>
 
     <div id='gf_image_select_preview_{$field_id}' class='gf_image_select_preview'></div>
