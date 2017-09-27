@@ -3,7 +3,7 @@
 Plugin Name: Image Select for Gravity Forms
 Plugin URI: https://ionata.com.au
 Description: A custom field for Gravity Forms
-Version: 0.1.0
+Version: 0.1.1
 Author: Evo Stamatov
 Author URI: https://ionata.com.au
 
@@ -31,7 +31,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-define( 'GF_IMAGE_SELECT_VERSION', '0.1.0' );
+define( 'GF_IMAGE_SELECT_VERSION', '0.1.1' );
 define( 'GF_IMAGE_SELECT_DOMAIN', 'gfimageselectdomain' );
 
 add_action( 'gform_loaded', array( 'GFImageSelect_Bootstrap', 'load' ), 5 );
